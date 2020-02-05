@@ -4,9 +4,14 @@ import re
 
 from sendSMS import send_message
 import configparser
+import boto3
 
-contacts = configparser.ConfigParser()
-contacts.read('contacts.ini')
+dynamodb = boto3.resource('dynamodb')
+table = dynamodb.Table('SMSwitch')
+
+response = table.scan()
+
+contacts = response['Items']
 
 
 def extractUrl(str):
@@ -24,12 +29,21 @@ class MyStreamListener(tweepy.StreamListener):
         print(f"{tweet.user.name}:{tweet.text}")
         try:
             image_url = f"{tweet.entities['media'][0]['media_url']}"
-            for k, v in contacts.items('CONTACTS'):
-                if(k.lower() in tweet.text.lower()):
-                    send_message(v, image_url)
+            for k in contacts:
+                if(k['Contact'].lower() in tweet.text.lower()):
+                    send_message(k['Phone Number'], image_url)
                     print(image_url)
-            if('cc' in tweet.text.lower()):
-                send_message(contacts.get('CONTACTS', 'SENDER'), image_url)
+            # if('cc' in tweet.text.lower()):
+                # send_message(contacts.get('CONTACTS', 'SENDER'), image_url)
+            if('*add' in tweet.text.lower()):
+                name = tweet.text.lower().split("*add")[1].split(" ")[1]
+                number = tweet.text.lower().split("*add")[1].split(" ")[2]
+                table.put_item(
+                    Item={
+                        'Contact': name,
+                        'Phone Number': number
+                    }
+                )
         except Exception as e:
             print(e)
 
