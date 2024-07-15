@@ -1,11 +1,16 @@
 import tweepy
 from config import create_api
 import re
-
+import os
+from dotenv import load_dotenv
 from sendSMS import send_message
 import configparser
 import boto3
-
+client = boto3.client(
+    'dynamodb',
+    aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+    aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY")
+)
 dynamodb = boto3.resource('dynamodb')
 table = dynamodb.Table('SMSwitch')
 
@@ -19,7 +24,7 @@ def extractUrl(str):
         'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\), ]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', str)
     return ur
 
-
+# will this upload
 class MyStreamListener(tweepy.StreamListener):
     def __init__(self, api):
         self.api = api
